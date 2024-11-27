@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:image/image.dart' as img;
 import 'package:logging/logging.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple_frame_app/frame_vision_app.dart';
 import 'package:simple_frame_app/simple_frame_app.dart';
@@ -35,6 +36,7 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
 
   // the image and metadata to show
   Image? _image;
+  Uint8List? _imageBytes;
   ImageMetadata? _imageMeta;
   bool _processing = false;
 
@@ -174,8 +176,9 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
         throw Exception('Error decoding photo');
       }
 
-      // perform the rotation
+      // perform the rotation and re-encode as JPEG
       imgIm = img.copyRotate(imgIm, angle: 270);
+      _imageBytes = img.encodeJpg(imgIm);
 
       // update Widget UI
       // For the widget we rotate it upon display with a transform,
@@ -195,9 +198,7 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
         // this call will throw an exception if the api_key is not valid
         var responseStream = _model!.generateContentStream(content);
 
-        // TODO split the response.text and append first string to previous list entry
         // TODO show in Frame, paginate
-        // TODO make shareable
         await for (final response in responseStream) {
           _log.fine(response.text);
           _appendResponseText(_responseTextList, response.text!);
@@ -242,6 +243,22 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
     }
   }
 
+  /// Use the platform Share mechanism to share the image and the generated text
+  static void _shareImage(Uint8List? jpegBytes, String text) async {
+    if (jpegBytes != null) {
+      try {
+        // Share the image bytes as a JPEG file
+        await Share.shareXFiles(
+          [XFile.fromData(jpegBytes, mimeType: 'image/jpeg', name: 'image.jpg')],
+          text: text,
+        );
+      }
+      catch (e) {
+        _log.severe('Error preparing image for sharing: $e');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -269,49 +286,56 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
               ],
             ),
             Expanded(
-            child: CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Transform(
-                      alignment: Alignment.center,
-                      // images are rotated 90 degrees clockwise from the Frame
-                      // so reverse that for display
-                      transform: Matrix4.rotationZ(-pi*0.5),
-                      child: _image,
-                    ),
-                  ),
-                ),
-                if (_imageMeta != null)
+            child: GestureDetector(
+              onTap: () {
+                if (_imageBytes != null) {
+                  _shareImage(_imageBytes, _responseTextList.join('\n'));
+                }
+              },
+              child: CustomScrollView(
+                slivers: [
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Column(children: [
-                        _imageMeta!,
-                        const Divider()
-                      ]),
+                      child: Transform(
+                        alignment: Alignment.center,
+                        // images are rotated 90 degrees clockwise from the Frame
+                        // so reverse that for display
+                        transform: Matrix4.rotationZ(-pi*0.5),
+                        child: _image,
+                      ),
                     ),
                   ),
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                        ),
-                        child: Text(_responseTextList[index]),
-                      );
-                    },
-                    childCount: _responseTextList.length,
+                  if (_imageMeta != null)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Column(children: [
+                          _imageMeta!,
+                          const Divider()
+                        ]),
+                      ),
+                    ),
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0,
+                          ),
+                          child: Text(_responseTextList[index]),
+                        );
+                      },
+                      childCount: _responseTextList.length,
+                    ),
                   ),
-                ),
-                // This ensures the list can grow dynamically
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Container(), // Empty container to allow scrolling
-                ),
-              ],
+                  // This ensures the list can grow dynamically
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Container(), // Empty container to allow scrolling
+                  ),
+                ],
+              ),
             ),
           ),
           ],
