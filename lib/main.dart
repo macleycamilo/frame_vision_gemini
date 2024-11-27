@@ -200,9 +200,8 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
         // TODO make shareable
         await for (final response in responseStream) {
           _log.fine(response.text);
-          setState(() {
-            _responseTextList.add(response.text ?? '');
-          });
+          _appendResponseText(_responseTextList, response.text!);
+          setState(() {});
         }
       }
       else {
@@ -220,6 +219,26 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
       });
       _processing = false;
       // TODO rethrow;?
+    }
+  }
+
+  /// generated text contains newlines when it wants them, otherwise append strings
+  /// directly
+  static void _appendResponseText(List<String> list, String text) {
+    List<String> splitText = text.split('\n');
+
+    if (list.isEmpty) {
+      list.addAll(splitText);
+    }
+    else {
+      if (splitText.isNotEmpty) {
+        // append the first line of splitText to the last string in list
+        list[list.length-1] = list[list.length-1] + splitText[0];
+
+        // append all the other lines from splitText to list
+        list.addAll(splitText.skip(1));
+      }
+      // else nothing to do
     }
   }
 
