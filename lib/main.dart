@@ -287,7 +287,10 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _imageMeta!,
+                      child: Column(children: [
+                        _imageMeta!,
+                        const Divider()
+                      ]),
                     ),
                   ),
                 SliverList(
@@ -296,7 +299,6 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
                       return Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16.0,
-                          vertical: 8.0
                         ),
                         child: Text(_responseTextList[index]),
                       );
