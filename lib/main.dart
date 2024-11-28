@@ -208,11 +208,13 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
 
       // Perform vision processing pipeline on the current image, i.e. multimodal query
       if (_model != null) {
-        final content = [Content.text(_prompt)];
+        final content = [
+          Content.data('image/jpeg', _imageBytes!),
+          Content.text(_prompt)];
 
-        // TODO add photo to content bundle (before the text prompt, in order)
         // this call will throw an exception if the api_key is not valid
         var responseStream = _model!.generateContentStream(content);
+        _pagination.clear();
 
         // show in ListView and paginate for Frame
         await for (final response in responseStream) {

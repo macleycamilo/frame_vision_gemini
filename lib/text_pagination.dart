@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:simple_frame_app/text_utils.dart';
 
 class TextPagination {
-  final List<String> originalLines = [];
+  final List<String> _originalLines = [];
   final int displayLinesPerPage;
 
   // Cached wrapped lines for efficiency, split into immutable and mutable parts
@@ -17,8 +17,8 @@ class TextPagination {
 
   void updateLastLine(String newLastLine) {
     // Replace the last line in originalLines and recompute mutable wrapped lines
-    if (originalLines.isNotEmpty) {
-      originalLines[originalLines.length - 1] = newLastLine;
+    if (_originalLines.isNotEmpty) {
+      _originalLines[_originalLines.length - 1] = newLastLine;
       _mutableWrappedLines = TextUtils.wrapText(newLastLine, 600, 4);
     }
   }
@@ -31,7 +31,7 @@ class TextPagination {
     }
 
     // Add a new line to the original lines
-    originalLines.add(newLine);
+    _originalLines.add(newLine);
 
     // Set the new line as the mutable wrapped lines
     _mutableWrappedLines = TextUtils.wrapText(newLine, 600, 4);
@@ -67,6 +67,14 @@ class TextPagination {
     if (hasPreviousPage()) {
       _currentPageIndex--;
     }
+  }
+
+  void clear() {
+    // Reset all content to initial state
+    _originalLines.clear();
+    _immutableWrappedLines.clear();
+    _mutableWrappedLines.clear();
+    _currentPageIndex = 0;
   }
 
   int get totalPages {
