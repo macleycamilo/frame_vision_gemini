@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:frame_vision_gemini/text_pagination.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:image/image.dart' as img;
 import 'package:logging/logging.dart';
@@ -42,6 +43,7 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
 
   // the response to show
   final List<String> _responseTextList = [];
+  final TextPagination _pagination = TextPagination();
 
   MainAppState() {
     Logger.root.level = Level.FINE;
@@ -134,7 +136,7 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
     await frame!.sendMessage(
       TxPlainText(
         msgCode: 0x0a,
-        text: '3-Tap: take photo'
+        text: '3-Tap: take photo\n______________\n1-Tap: next page\n2-Tap: previous page'
       )
     );
   }
@@ -144,9 +146,23 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
     switch (taps) {
       case 1:
         // next
+        _pagination.nextPage();
+        frame!.sendMessage(
+          TxPlainText(
+            msgCode: 0x0a,
+            text: _pagination.getCurrentPage().join('\n')
+          )
+        );
         break;
       case 2:
         // prev
+        _pagination.previousPage();
+        frame!.sendMessage(
+          TxPlainText(
+            msgCode: 0x0a,
+            text: _pagination.getCurrentPage().join('\n')
+          )
+        );
         break;
       case 3:
         // check if there's processing in progress already and drop the request if so
@@ -198,11 +214,17 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
         // this call will throw an exception if the api_key is not valid
         var responseStream = _model!.generateContentStream(content);
 
-        // TODO show in Frame, paginate
+        // show in ListView and paginate for Frame
         await for (final response in responseStream) {
           _log.fine(response.text);
-          _appendResponseText(_responseTextList, response.text!);
+          _appendResponseText(response.text!);
           setState(() {});
+          await frame!.sendMessage(
+            TxPlainText(
+              msgCode: 0x0a,
+              text: _pagination.getCurrentPage().join('\n')
+            )
+          );
         }
       }
       else {
@@ -225,19 +247,28 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
 
   /// generated text contains newlines when it wants them, otherwise append strings
   /// directly
-  static void _appendResponseText(List<String> list, String text) {
+  void _appendResponseText(String text) {
     List<String> splitText = text.split('\n');
 
-    if (list.isEmpty) {
-      list.addAll(splitText);
+    if (_responseTextList.isEmpty) {
+      _responseTextList.addAll(splitText);
+
+      for (var line in splitText) {
+        _pagination.appendLine(line);
+      }
     }
     else {
       if (splitText.isNotEmpty) {
         // append the first line of splitText to the last string in list
-        list[list.length-1] = list[list.length-1] + splitText[0];
+        String updatedLastLine = _responseTextList[_responseTextList.length-1] + splitText[0];
+        _responseTextList[_responseTextList.length-1] = updatedLastLine;
+        _pagination.updateLastLine(updatedLastLine);
 
         // append all the other lines from splitText to list
-        list.addAll(splitText.skip(1));
+        _responseTextList.addAll(splitText.skip(1));
+        for (var line in splitText.skip(1)) {
+          _pagination.appendLine(line);
+        }
       }
       // else nothing to do
     }
