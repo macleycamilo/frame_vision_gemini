@@ -7,7 +7,7 @@ class TextPagination {
   final int displayLinesPerPage;
 
   // Cached wrapped lines for efficiency, split into immutable and mutable parts
-  late List<String> _immutableWrappedLines = [];
+  final List<String> _immutableWrappedLines = [];
   List<String> _mutableWrappedLines = [];
   int _currentPageIndex = 0;
 
