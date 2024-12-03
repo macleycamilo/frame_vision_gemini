@@ -37,7 +37,7 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
 
   // the image and metadata to show
   Image? _image;
-  Uint8List? _imageBytes;
+  Uint8List? _uprightImageBytes;
   ImageMetadata? _imageMeta;
   bool _processing = false;
 
@@ -194,7 +194,7 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
 
       // perform the rotation and re-encode as JPEG
       imgIm = img.copyRotate(imgIm, angle: 270);
-      _imageBytes = img.encodeJpg(imgIm);
+      _uprightImageBytes = img.encodeJpg(imgIm);
 
       // update Widget UI
       // For the widget we rotate it upon display with a transform,
@@ -209,7 +209,7 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
       // Perform vision processing pipeline on the current image, i.e. multimodal query
       if (_model != null) {
         final content = [
-          Content.data('image/jpeg', _imageBytes!),
+          Content.data('image/jpeg', _uprightImageBytes!),
           Content.text(_prompt)];
 
         // this call will throw an exception if the api_key is not valid
@@ -321,8 +321,8 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
             Expanded(
             child: GestureDetector(
               onTap: () {
-                if (_imageBytes != null) {
-                  _shareImage(_imageBytes, _responseTextList.join('\n'));
+                if (_uprightImageBytes != null) {
+                  _shareImage(_uprightImageBytes, _responseTextList.join('\n'));
                 }
               },
               child: CustomScrollView(
