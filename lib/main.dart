@@ -1,11 +1,9 @@
 import 'dart:async';
-import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:frame_vision_gemini/text_pagination.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:image/image.dart' as img;
 import 'package:logging/logging.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -62,6 +60,10 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
   @override
   void initState() {
     super.initState();
+
+    // set the camera resolution as large as possible instead of default 512
+    // (quality defaults to VERY_HIGH already)
+    resolution = 720;
 
     // Frame connection and Gemini model initialization need to be performed asynchronously
     asyncInit();
@@ -190,17 +192,8 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
     _responseTextList.clear();
 
     try {
-      // NOTE: Frame camera is rotated 90 degrees clockwise,
-      // so we need to make it upright for Gemini image processing.
-      img.Image? imgIm = img.decodeJpg(imageData);
-      if (imgIm == null) {
-        // if the photo is malformed, just bail out
-        throw Exception('Error decoding photo');
-      }
-
-      // perform the rotation and re-encode as JPEG
-      imgIm = img.copyRotate(imgIm, angle: 270);
-      _uprightImageBytes = img.encodeJpg(imgIm);
+      // we let FrameVisionApp rotate the image off the Frame camera already
+      _uprightImageBytes = imageData;
 
       // update Widget UI
       // For the widget we rotate it upon display with a transform,
@@ -336,13 +329,7 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Transform(
-                        alignment: Alignment.center,
-                        // images are rotated 90 degrees clockwise from the Frame
-                        // so reverse that for display
-                        transform: Matrix4.rotationZ(-pi*0.5),
-                        child: _image,
-                      ),
+                      child: _image,
                     ),
                   ),
                   if (_imageMeta != null)
@@ -350,7 +337,7 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Column(children: [
-                          _imageMeta!,
+                          ImageMetadataWidget(meta: _imageMeta!),
                           const Divider()
                         ]),
                       ),
