@@ -30,7 +30,8 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
   GenerativeModel? _model;
   String _apiKey = '';
   String _prompt = '';
-  final TextEditingController _apiKeyTextFieldController = TextEditingController();
+  final TextEditingController _apiKeyTextFieldController =
+    TextEditingController(text: 'AIzaSyDydpOVy6bPrFxxSNjfyN3ic_wPu86iSw8');
   final TextEditingController _promptTextFieldController = TextEditingController();
 
   // the image and metadata to show
@@ -70,7 +71,9 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
   }
 
   Future<void> asyncInit() async {
-    await _loadApiKey();
+    _apiKey = _apiKeyTextFieldController.text;
+_model = _initModel();
+
     await _loadPrompt();
 
     // kick off the connection to Frame and start the app if possible (unawaited)
@@ -99,8 +102,8 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
     final prefs = await SharedPreferences.getInstance();
 
     setState(() {
-      _apiKey = prefs.getString('api_key') ?? '';
-      _apiKeyTextFieldController.text = _apiKey;
+      _apiKey = _apiKeyTextFieldController.text;
+
     });
 
     if (_apiKey != '') {
@@ -111,8 +114,8 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
 
   Future<void> _saveApiKey() async {
     _apiKey = _apiKeyTextFieldController.text;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('api_key', _apiKey);
+// não precisa salvar no SharedPreferences, pois já está embutido
+
 
     // refresh the generative model
     _model = _initModel();
