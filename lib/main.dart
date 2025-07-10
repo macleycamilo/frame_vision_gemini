@@ -30,8 +30,8 @@ class MainAppState extends State<MainApp> with SimpleFrameAppState, FrameVisionA
   GenerativeModel? _model;
   String _apiKey = '';
   String _prompt = '';
-  final TextEditingController _apiKeyTextFieldController =
-    TextEditingController(text: 'AIzaSyDydpOVy6bPrFxxSNjfyN3ic_wPu86iSw8');
+final TextEditingController _apiKeyTextFieldController = TextEditingController();
+
   final TextEditingController _promptTextFieldController = TextEditingController();
 
   // the image and metadata to show
