@@ -16,30 +16,30 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 // Endpoint principal
-app.post('/api/gemini', async (req, res) => {
-  const userKey = req.headers['x-api-key'];
+app.post("/api/gemini", async (req, res) => {
+  const userKey = req.headers["x-api-key"];
 
   // Verifica a chave
   if (userKey !== API_KEY) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
-  const { text } = req.body;
+  const { message } = req.body;
 
-  if (!text) {
-    return res.status(400).json({ error: 'No text provided' });
+  if (!message) {
+    return res.status(400).json({ error: "No text provided" });
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-    const result = await model.generateContent(text);
-    const response = await result.response;
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const result = await model.generateContent(message);
+    const response = result.response;
     const answer = response.text();
 
     return res.json({ response: answer });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: 'Gemini API error' });
+    return res.status(500).json({ error: "Gemini API error" });
   }
 });
 
