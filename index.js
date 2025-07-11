@@ -24,15 +24,15 @@ app.post("/api/gemini", async (req, res) => {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  const { message } = req.body;
+  const { text } = req.body;
 
-  if (!message) {
+  if (!text) {
     return res.status(400).json({ error: "No text provided" });
   }
 
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const result = await model.generateContent(message);
+    const result = await model.generateContent(text);
     const response = result.response;
     const answer = response.text();
 
